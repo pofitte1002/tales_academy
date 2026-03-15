@@ -1,0 +1,963 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>잔혹현실 아카데미 | Cruel Reality Academy</title>
+    
+    <style>
+        /* --- Font Definition : GMarketSans --- */
+        @font-face {
+            font-family: 'GMarketSans';
+            src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2001@1.1/GmarketSansLight.woff') format('woff');
+            font-weight: 300;
+            font-display: swap;
+        }
+        @font-face {
+            font-family: 'GMarketSans';
+            src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2001@1.1/GmarketSansMedium.woff') format('woff');
+            font-weight: 500;
+            font-display: swap;
+        }
+        @font-face {
+            font-family: 'GMarketSans';
+            src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2001@1.1/GmarketSansBold.woff') format('woff');
+            font-weight: 700;
+            font-display: swap;
+        }
+
+        /* --- CSS Reset & Variables --- */
+        :root {
+            /* Requested Colors (Adjusted for UI) */
+            --bg-color: #050505; /* Deep Black for Contrast */
+            --color-red: #ff0062;
+            --color-yellow: #ffe355;
+            --color-blue: #00aff4;
+            --color-white: #ffffff;
+            
+            --text-main: #f0f0f0;
+            --text-muted: #888;
+            
+            --border-color: rgba(255, 255, 255, 0.2);
+            
+            --font-main: 'GMarketSans', sans-serif;
+            --card-height: 480px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: var(--font-main);
+            overflow-x: hidden;
+            line-height: 1.6;
+        }
+
+        /* --- Grid/Tech Texture Overlay --- */
+        .noise-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: 900;
+            opacity: 0.03;
+            background-image: 
+                linear-gradient(var(--border-color) 1px, transparent 1px),
+                linear-gradient(90deg, var(--border-color) 1px, transparent 1px);
+            background-size: 40px 40px;
+        }
+
+        /* --- Loading Screen --- */
+        #loader {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100vh;
+            background-color: #000; z-index: 9999;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            transition: opacity 0.8s ease-out;
+        }
+        .loader-title {
+            font-family: var(--font-main); font-weight: 700; font-size: 2rem;
+            color: var(--color-blue); text-transform: uppercase; letter-spacing: 2px;
+            text-shadow: 0 0 10px var(--color-blue);
+            margin-bottom: 2rem;
+        }
+        .progress-container {
+            width: 80%; max-width: 400px; height: 4px; background: #222; position: relative;
+            border: 1px solid var(--color-blue);
+        }
+        .progress-bar {
+            height: 100%; background: var(--color-yellow); width: 0%;
+            transition: width 0.1s linear;
+            box-shadow: 0 0 10px var(--color-yellow);
+        }
+        .loading-text {
+            margin-top: 15px; font-size: 0.9rem; color: var(--color-white); font-weight: 300;
+        }
+        #enterBtn {
+            display: none; margin-top: 30px;
+            padding: 12px 40px; 
+            border: 1px solid var(--color-red);
+            background: rgba(255, 0, 98, 0.1);
+            color: var(--color-red);
+            font-family: var(--font-main); font-weight: 700; font-size: 1rem; 
+            cursor: pointer; transition: 0.3s;
+            clip-path: polygon(10% 0, 100% 0, 100% 70%, 90% 100%, 0 100%, 0 30%);
+        }
+        #enterBtn:hover { 
+            background: var(--color-red); color: #000; 
+            box-shadow: 0 0 20px var(--color-red);
+        }
+
+        /* --- Audio Control --- */
+        .audio-control {
+            position: fixed; bottom: 20px; left: 20px; z-index: 1000;
+            color: var(--text-muted); cursor: pointer; font-size: 0.8rem; 
+            border: 1px solid #333; padding: 5px 15px; 
+            background: rgba(0,0,0,0.8); transition: 0.3s;
+            font-weight: 300;
+        }
+        .audio-control:hover { color: var(--color-blue); border-color: var(--color-blue); }
+
+        /* --- Main Layout --- */
+        main {
+            max-width: 1200px; margin: 0 auto; padding: 0 20px;
+            position: relative; z-index: 10; opacity: 0; transition: opacity 1.5s ease-in;
+        }
+
+        .section-title {
+            font-family: var(--font-main); font-weight: 700; font-size: 2.5rem; 
+            text-align: center; margin: 6rem 0 3rem; 
+            color: var(--color-white);
+            text-transform: uppercase;
+        }
+        .section-title span { color: var(--color-red); }
+        
+        /* Decorative line under title */
+        .section-title::after {
+            content: ''; display: block; width: 60px; height: 3px; 
+            background: var(--color-yellow); margin: 1.5rem auto;
+            box-shadow: 0 0 10px var(--color-yellow);
+        }
+
+        /* --- Faction Tabs --- */
+        .faction-tabs {
+            display: flex; justify-content: center; flex-wrap: wrap; gap: 15px; margin-bottom: 4rem;
+        }
+        .tab-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: var(--text-muted);
+            padding: 12px 25px; cursor: pointer; 
+            font-family: var(--font-main); font-weight: 500; font-size: 0.95rem;
+            transition: all 0.3s ease;
+            position: relative; overflow: hidden;
+        }
+        
+        /* Avant-garde Hover Effect */
+        .tab-btn::before {
+            content: ''; position: absolute; top: 0; left: 0; width: 3px; height: 100%;
+            background: var(--color-blue); transition: 0.3s; transform: scaleY(0);
+        }
+        .tab-btn:hover::before, .tab-btn.active::before { transform: scaleY(1); }
+        
+        .tab-btn:hover, .tab-btn.active {
+            color: var(--color-white);
+            border-color: var(--color-blue);
+            background: rgba(0, 175, 244, 0.1);
+            box-shadow: 0 0 15px rgba(0, 175, 244, 0.2);
+        }
+
+        /* --- Character Grid --- */
+        .character-container {
+            display: none;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 2.5rem;
+            animation: fadeIn 0.5s ease-out;
+        }
+        .character-container.active { display: grid; }
+        
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* --- 3D FLIP CARD CSS --- */
+        .char-card-scene {
+            background-color: transparent; height: var(--card-height); perspective: 1200px;
+        }
+        .char-card-inner {
+            position: relative; width: 100%; height: 100%; text-align: center;
+            transition: transform 0.6s cubic-bezier(0.25, 0.8, 0.25, 1);
+            transform-style: preserve-3d; 
+            cursor: pointer;
+        }
+        /* Flip Action */
+        .char-card-scene.flipped .char-card-inner {
+            transform: rotateY(180deg);
+        }
+
+        .card-face {
+            position: absolute; width: 100%; height: 100%;
+            -webkit-backface-visibility: hidden; backface-visibility: hidden;
+            border: 1px solid var(--border-color);
+            background: #0a0a0a;
+            display: flex; flex-direction: column; overflow: hidden;
+        }
+
+        /* --- Front Face --- */
+        .card-front { 
+            z-index: 2; 
+            border-top: 3px solid var(--color-blue);
+        }
+        
+        .char-portrait {
+            height: 240px;
+            background-color: #111;
+            background-size: cover;
+            background-position: top center;
+            background-repeat: no-repeat;
+            position: relative;
+            /* Remove overlay as requested */
+        }
+        
+        /* SF Style Decoration on Image */
+        .char-portrait::before {
+            content: ''; position: absolute; bottom: 0; right: 0;
+            width: 0; height: 0;
+            border-style: solid;
+            border-width: 0 0 30px 30px;
+            border-color: transparent transparent var(--bg-color) transparent;
+        }
+
+        .char-info { 
+            padding: 1.5rem; text-align: left; flex: 1; 
+            display: flex; flex-direction: column; 
+            background: linear-gradient(180deg, #0a0a0a 0%, #000 100%);
+        }
+        
+        .char-name { 
+            font-size: 1.6rem; font-weight: 700; color: var(--color-white); 
+            margin-bottom: 0.3rem; letter-spacing: -1px;
+        }
+        .char-role { 
+            font-size: 0.8rem; color: var(--color-blue); margin-bottom: 0.8rem; 
+            text-transform: uppercase; letter-spacing: 1px; font-weight: 500;
+        }
+        .char-traits { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 1rem; }
+        .trait-tag { 
+            font-size: 0.7rem; padding: 3px 8px; 
+            border: 1px solid #333; color: #aaa; background: #151515;
+        }
+        .char-desc { 
+            font-size: 0.85rem; color: #bbb; margin-bottom: 1rem; 
+            line-height: 1.5; font-weight: 300; 
+        }
+        .char-quote { 
+            font-style: normal; font-size: 0.85rem; color: var(--color-yellow); 
+            padding-left: 10px; border-left: 2px solid var(--color-yellow); 
+            margin-top: auto; font-weight: 500;
+        }
+
+        /* --- Back Face --- */
+        .card-back {
+            transform: rotateY(180deg);
+            background: #080808;
+            border: 1px solid var(--color-red);
+            box-shadow: 0 0 15px rgba(255, 0, 98, 0.15);
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+        }
+        
+        /* SF Tech Border */
+        .tech-border {
+            position: absolute; top: 10px; left: 10px; right: 10px; bottom: 10px;
+            border: 1px dashed rgba(255, 0, 98, 0.3);
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+        }
+        .tech-border::before, .tech-border::after {
+            content: ''; position: absolute; width: 10px; height: 10px;
+            border: 2px solid var(--color-red); transition: 0.3s;
+        }
+        .tech-border::before { top: -1px; left: -1px; border-width: 2px 0 0 2px; }
+        .tech-border::after { bottom: -1px; right: -1px; border-width: 0 2px 2px 0; }
+
+        .tarot-number {
+            font-family: var(--font-main); font-weight: 300; font-size: 1.2rem; 
+            color: var(--color-red); margin-bottom: 1rem; letter-spacing: 2px;
+        }
+
+        .tarot-image-placeholder {
+            font-size: 4rem; margin-bottom: 1.5rem; 
+            color: var(--color-white);
+            text-shadow: 0 0 20px var(--color-red);
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { text-shadow: 0 0 10px var(--color-red); opacity: 0.8; }
+            50% { text-shadow: 0 0 25px var(--color-red), 0 0 5px var(--color-white); opacity: 1; }
+        }
+
+        .tarot-name {
+            font-family: var(--font-main); font-weight: 700; font-size: 1.4rem; 
+            text-transform: uppercase; color: var(--color-white); 
+            letter-spacing: 1px; border-bottom: 2px solid var(--color-red); 
+            padding-bottom: 5px; margin-bottom: 2rem;
+        }
+        
+        /* Expand Button on Back */
+        .expand-btn {
+            padding: 10px 25px;
+            border: 1px solid var(--color-blue);
+            background: rgba(0, 175, 244, 0.1);
+            color: var(--color-blue);
+            font-family: var(--font-main); font-weight: 700; font-size: 0.8rem;
+            cursor: pointer; transition: all 0.3s;
+            text-transform: uppercase; letter-spacing: 1px;
+            z-index: 5;
+        }
+        .expand-btn:hover {
+            background: var(--color-blue); color: #000;
+            box-shadow: 0 0 20px var(--color-blue);
+        }
+        
+        .click-hint {
+            font-size: 0.7rem; color: #555; margin-top: 15px; font-weight: 300;
+        }
+
+        /* --- Modal (Expansion) --- */
+        #cardModal {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.95); z-index: 9999;
+            justify-content: center; align-items: center; flex-direction: column;
+            backdrop-filter: blur(5px);
+            animation: modalFadeIn 0.3s forwards;
+        }
+        @keyframes modalFadeIn { from {opacity: 0;} to {opacity: 1;} }
+
+        .modal-content {
+            position: relative; width: 90%; max-width: 400px; 
+            background: #000;
+            border: 2px solid var(--color-blue); 
+            box-shadow: 0 0 30px rgba(0, 175, 244, 0.3);
+            display: flex; flex-direction: column; align-items: center;
+            transform: scale(0.9); animation: modalPop 0.3s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+            padding: 20px;
+        }
+        @keyframes modalPop { to { transform: scale(1); } }
+
+        /* Modal Image Styling */
+        #modalImage {
+            width: 100%; height: auto; 
+            max-height: 60vh; object-fit: cover;
+            border: 1px solid #333;
+            margin-bottom: 15px;
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.1);
+        }
+
+        #modalName {
+            color: var(--color-yellow); font-size: 1.5rem; font-weight: 700;
+            margin-bottom: 5px; text-transform: uppercase;
+        }
+        #modalCharName {
+            color: var(--text-muted); font-size: 0.9rem; font-weight: 300;
+        }
+
+        .close-modal {
+            position: absolute; top: -40px; right: 0;
+            color: var(--color-white); font-weight: 700; cursor: pointer;
+            font-size: 1rem; border: 1px solid var(--color-white);
+            padding: 5px 15px; transition: 0.3s;
+        }
+        .close-modal:hover { background: var(--color-white); color: #000; }
+
+        /* --- Mobile Optimization --- */
+        @media (max-width: 768px) {
+            .section-title { font-size: 2rem; }
+            .modal-content { width: 95%; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="noise-overlay"></div>
+    
+    <!-- Audio Element -->
+    <audio id="bgm" loop>
+        <source src="https://poft.uk/leets/z/f--kreal.mp3" type="audio/mp3">
+    </audio>
+    <div class="audio-control" onclick="toggleAudio()" id="audioBtn">AUDIO: OFF</div>
+
+    <!-- Intro Loading Screen -->
+    <div id="loader">
+        <div class="loader-title">잔혹현실 아카데미</div>
+        <div class="progress-container">
+            <div class="progress-bar" id="progressBar"></div>
+        </div>
+        <div class="loading-text" id="loadingText">아카데미에 접속중... 0%</div>
+        <button id="enterBtn" onclick="enterSite()">Welcome</button>
+    </div>
+
+    <!-- Main Content -->
+    <main id="mainContent">
+        <!-- Hero Section -->
+        <section style="height: 60vh; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;">
+            <h2 style="font-weight: 300; color: var(--color-blue); letter-spacing: 0.2em; margin-bottom: 10px;">TALES ACADEMY</h2>
+            <h1 style="font-size: 3.5rem; font-weight: 700; color: var(--color-white); text-shadow: 0 0 20px var(--color-blue); line-height: 1.2;">
+                잔혹현실 <span style="color:var(--color-yellow)">아카데미</span>
+            </h1>
+            <p style="color: var(--text-muted); margin-top: 1.5rem; font-weight: 300; max-width: 600px;">
+                "카드를 뒤집어 그들의 운명을 확인하라."
+            </p>
+        </section>
+
+        <!-- Character Section -->
+        <section id="characters">
+            <h2 class="section-title"><span>동</span>아리&학생</h2>
+            
+            <div class="faction-tabs">
+                <button class="tab-btn active" onclick="openTab('andersen')">안데르센 화이트</button>
+                <button class="tab-btn" onclick="openTab('unknown')">언노운</button>
+                <button class="tab-btn" onclick="openTab('haetae')">해태</button>
+                <button class="tab-btn" onclick="openTab('gift')">GiFT</button>
+                <button class="tab-btn" onclick="openTab('wild')">와일드 패러블</button>
+            </div>
+
+            <!-- Andersen White -->
+            <div id="andersen" class="character-container active">
+                <!-- Solan -->
+                <div class="char-card-scene" onclick="flipCard(this)">
+                    <div class="char-card-inner">
+                        <div class="card-face card-front">
+                            <!-- Shadow removed from image via CSS -->
+                            <div class="char-portrait" style="background-image: url('https://poft.uk/leets/z/a.webp');"></div>
+                            <div class="char-info">
+                                <div class="char-name">솔렌</div>
+                                <div class="char-role">선봉대장 / 미운 오리 새끼</div>
+                                <div class="char-traits"><span class="trait-tag">INFJ</span><span class="trait-tag">결벽증</span></div>
+                                <p class="char-desc">순백의 군복을 입은 차가운 리더. 불순한 것을 용납하지 않는다.</p>
+                                <p class="char-quote">"정말... 불순한 생각이네요. 제 생각만이 평화니까."</p>
+                            </div>
+                        </div>
+                        <div class="card-face card-back">
+                            <div class="tech-border">
+                                <div class="tarot-number">XX</div>
+                                <div class="tarot-image-placeholder">⚖️</div>
+                                <div class="tarot-name">Judgement</div>
+                                <button class="expand-btn" onclick="expandCard(event, 'XX. JUDGEMENT', '솔렌')">View Card</button>
+                                <div class="click-hint">Click background to return</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Eira -->
+                <div class="char-card-scene" onclick="flipCard(this)">
+                    <div class="char-card-inner">
+                        <div class="card-face card-front">
+                            <div class="char-portrait" style="background-image: url('https://poft.uk/leets/z/b.webp');"></div>
+                            <div class="char-info">
+                                <div class="char-name">에이라</div>
+                                <div class="char-role">참모 / 눈의 여왕</div>
+                                <div class="char-traits"><span class="trait-tag">INTJ</span><span class="trait-tag">오만</span></div>
+                                <p class="char-desc">차가운 지성과 범접할 수 없는 오만함.</p>
+                                <p class="char-quote">"당신의 가치는... 정말 무가치하네요."</p>
+                            </div>
+                        </div>
+                        <div class="card-face card-back">
+                            <div class="tech-border">
+                                <div class="tarot-number">II</div>
+                                <div class="tarot-image-placeholder">🌙</div>
+                                <div class="tarot-name">High Priestess</div>
+                                <button class="expand-btn" onclick="expandCard(event, 'II. HIGH PRIESTESS', '에이라')">View Card</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                 <!-- Ria -->
+                 <div class="char-card-scene" onclick="flipCard(this)">
+                    <div class="char-card-inner">
+                        <div class="card-face card-front">
+                            <div class="char-portrait" style="background-image: url('https://poft.uk/leets/z/c.webp');"></div>
+                            <div class="char-info">
+                                <div class="char-name">리아</div>
+                                <div class="char-role">돌격병 / 빨간 구두</div>
+                                <div class="char-traits"><span class="trait-tag">ESFP</span><span class="trait-tag">광기</span></div>
+                                <p class="char-desc">멈추지 않고 춤추는 파멸적인 에너지.</p>
+                                <p class="char-quote">"아하하! 더 빨리! 계속!"</p>
+                            </div>
+                        </div>
+                        <div class="card-face card-back">
+                            <div class="tech-border">
+                                <div class="tarot-number">XV</div>
+                                <div class="tarot-image-placeholder">😈</div>
+                                <div class="tarot-name">The Devil</div>
+                                <button class="expand-btn" onclick="expandCard(event, 'XV. THE DEVIL', '리아')">View Card</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Estelle -->
+                <div class="char-card-scene" onclick="flipCard(this)">
+                    <div class="char-card-inner">
+                        <div class="card-face card-front">
+                            <div class="char-portrait" style="background-image: url('https://poft.uk/leets/z/d.webp');"></div>
+                            <div class="char-info">
+                                <div class="char-name">에스텔</div>
+                                <div class="char-role">지원병 / 성냥팔이 소녀</div>
+                                <div class="char-traits"><span class="trait-tag">INFP</span><span class="trait-tag">희생</span></div>
+                                <p class="char-desc">어둠 속에서 타오르는 작은 희망의 불꽃.</p>
+                                <p class="char-quote">"따뜻한.. 불꽃.. 필요해.."</p>
+                            </div>
+                        </div>
+                        <div class="card-face card-back">
+                            <div class="tech-border">
+                                <div class="tarot-number">XVII</div>
+                                <div class="tarot-image-placeholder">⭐</div>
+                                <div class="tarot-name">The Star</div>
+                                <button class="expand-btn" onclick="expandCard(event, 'XVII. THE STAR', '에스텔')">View Card</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Unknown -->
+            <div id="unknown" class="character-container">
+                <!-- Mugyeol -->
+                <div class="char-card-scene" onclick="flipCard(this)">
+                    <div class="char-card-inner">
+                        <div class="card-face card-front">
+                            <div class="char-portrait" style="background-image: url('https://poft.uk/leets/z/e.webp');"></div>
+                            <div class="char-info">
+                                <div class="char-name">무결</div>
+                                <div class="char-role">리더 / 이무기</div>
+                                <div class="char-traits"><span class="trait-tag">ENTJ</span><span class="trait-tag">지배</span></div>
+                                <p class="char-desc">용이 되려는 강한 권력 의지와 리더십.</p>
+                                <p class="char-quote">"비켜. 방해하면 박살낸다."</p>
+                            </div>
+                        </div>
+                        <div class="card-face card-back">
+                            <div class="tech-border">
+                                <div class="tarot-number">IV</div>
+                                <div class="tarot-image-placeholder">👑</div>
+                                <div class="tarot-name">The Emperor</div>
+                                <button class="expand-btn" onclick="expandCard(event, 'IV. THE EMPEROR', '무결')">View Card</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Papa -->
+                <div class="char-card-scene" onclick="flipCard(this)">
+                    <div class="char-card-inner">
+                        <div class="card-face card-front">
+                            <div class="char-portrait" style="background-image: url('https://poft.uk/leets/z/f.webp');"></div>
+                            <div class="char-info">
+                                <div class="char-name">파파</div>
+                                <div class="char-role">정찰병 / 갓파</div>
+                                <div class="char-traits"><span class="trait-tag">ISTP</span><span class="trait-tag">고립</span></div>
+                                <p class="char-desc">기계를 다루는 내향적인 은둔자.</p>
+                                <p class="char-quote">"귀찮아.. 메시지나 확인해."</p>
+                            </div>
+                        </div>
+                        <div class="card-face card-back">
+                            <div class="tech-border">
+                                <div class="tarot-number">IX</div>
+                                <div class="tarot-image-placeholder">🔦</div>
+                                <div class="tarot-name">The Hermit</div>
+                                <button class="expand-btn" onclick="expandCard(event, 'IX. THE HERMIT', '파파')">View Card</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Nesia -->
+                <div class="char-card-scene" onclick="flipCard(this)">
+                    <div class="char-card-inner">
+                        <div class="card-face card-front">
+                            <div class="char-portrait" style="background-image: url('https://poft.uk/leets/z/g.webp');"></div>
+                            <div class="char-info">
+                                <div class="char-name">네시아</div>
+                                <div class="char-role">잠입원 / 네스</div>
+                                <div class="char-traits"><span class="trait-tag">ISFP</span><span class="trait-tag">불안</span></div>
+                                <p class="char-desc">안개 속에 숨겨진 미스터리.</p>
+                                <p class="char-quote">"물속이.. 더 편해.. 육지는 시끄러워.."</p>
+                            </div>
+                        </div>
+                        <div class="card-face card-back">
+                            <div class="tech-border">
+                                <div class="tarot-number">XVIII</div>
+                                <div class="tarot-image-placeholder">🌔</div>
+                                <div class="tarot-name">The Moon</div>
+                                <button class="expand-btn" onclick="expandCard(event, 'XVIII. THE MOON', '네시아')">View Card</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                 <!-- Leuku -->
+                 <div class="char-card-scene" onclick="flipCard(this)">
+                    <div class="char-card-inner">
+                        <div class="card-face card-front">
+                            <div class="char-portrait" style="background-image: url('https://poft.uk/leets/z/h.webp');"></div>
+                            <div class="char-info">
+                                <div class="char-name">르쿠</div>
+                                <div class="char-role">전투원 / 다르쿠</div>
+                                <div class="char-traits"><span class="trait-tag">ESTP</span><span class="trait-tag">돌진</span></div>
+                                <p class="char-desc">목표를 향해 거침없이 돌진하는 열혈 전사.</p>
+                                <p class="char-quote">"뭐야? 한판 붙자는 거야?"</p>
+                            </div>
+                        </div>
+                        <div class="card-face card-back">
+                            <div class="tech-border">
+                                <div class="tarot-number">VII</div>
+                                <div class="tarot-image-placeholder">🛒</div>
+                                <div class="tarot-name">The Chariot</div>
+                                <button class="expand-btn" onclick="expandCard(event, 'VII. THE CHARIOT', '르쿠')">View Card</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Haetae -->
+            <div id="haetae" class="character-container">
+                <!-- Cheonga -->
+                <div class="char-card-scene" onclick="flipCard(this)">
+                    <div class="char-card-inner">
+                        <div class="card-face card-front">
+                            <div class="char-portrait" style="background-image: url('https://poft.uk/leets/z/i.webp');"></div>
+                            <div class="char-info">
+                                <div class="char-name">청아</div>
+                                <div class="char-role">풍기위원 / 심청</div>
+                                <div class="char-traits"><span class="trait-tag">ISFJ</span><span class="trait-tag">인내</span></div>
+                                <p class="char-desc">도리를 지키며 때를 기다리는 희생정신.</p>
+                                <p class="char-quote">"무례하군요. 도리는 지키셔야죠."</p>
+                            </div>
+                        </div>
+                        <div class="card-face card-back">
+                            <div class="tech-border">
+                                <div class="tarot-number">XII</div>
+                                <div class="tarot-image-placeholder">🧣</div>
+                                <div class="tarot-name">The Hanged Man</div>
+                                <button class="expand-btn" onclick="expandCard(event, 'XII. HANGED MAN', '청아')">View Card</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Yeonhui -->
+                <div class="char-card-scene" onclick="flipCard(this)">
+                    <div class="char-card-inner">
+                        <div class="card-face card-front">
+                            <div class="char-portrait" style="background-image: url('https://poft.uk/leets/z/j.webp');"></div>
+                            <div class="char-info">
+                                <div class="char-name">연희</div>
+                                <div class="char-role">연락책 / 흥부와 놀부</div>
+                                <div class="char-traits"><span class="trait-tag">ENFJ</span><span class="trait-tag">화합</span></div>
+                                <p class="char-desc">관계와 소통의 중심.</p>
+                                <p class="char-quote">"좋은 소식이에요! 다들 주목!"</p>
+                            </div>
+                        </div>
+                        <div class="card-face card-back">
+                            <div class="tech-border">
+                                <div class="tarot-number">VI</div>
+                                <div class="tarot-image-placeholder">💞</div>
+                                <div class="tarot-name">The Lovers</div>
+                                <button class="expand-btn" onclick="expandCard(event, 'VI. THE LOVERS', '연희')">View Card</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Horan (Haetae) -->
+                <div class="char-card-scene" onclick="flipCard(this)">
+                    <div class="char-card-inner">
+                       <div class="card-face card-front">
+                           <div class="char-portrait" style="background-image: url('https://poft.uk/leets/z/p.webp');"></div>
+                           <div class="char-info">
+                               <div class="char-name">호란</div>
+                               <div class="char-role">집행관 / 햇님 달님</div>
+                               <div class="char-traits"><span class="trait-tag">ESTP</span><span class="trait-tag">전투광</span></div>
+                               <p class="char-desc">호탕하고 거친 반말을 사용하는 육식계 전사.</p>
+                               <p class="char-quote">"어흥! 떡 하나 주면 안 잡아먹지~"</p>
+                          </div>
+                      </div>
+                      <div class="card-face card-back">
+                          <div class="tech-border">
+                              <div class="tarot-number">XI</div>
+                              <div class="tarot-image-placeholder">⚖️</div>
+                              <div class="tarot-name">Justice</div>
+                              <button class="expand-btn" onclick="expandCard(event, 'XI. JUSTICE', '호란')">View Card</button>
+                          </div>
+                      </div>
+                  </div>
+              </div>
+            </div>
+
+            <!-- GiFT -->
+            <div id="gift" class="character-container">
+                <!-- Luty -->
+                <div class="char-card-scene" onclick="flipCard(this)">
+                    <div class="char-card-inner">
+                        <div class="card-face card-front">
+                            <div class="char-portrait" style="background-image: url('https://poft.uk/leets/z/k.webp');"></div>
+                            <div class="char-info">
+                                <div class="char-name">루티</div>
+                                <div class="char-role">추적자 / 헨젤과 그레텔</div>
+                                <div class="char-traits"><span class="trait-tag">ISTJ</span><span class="trait-tag">원칙</span></div>
+                                <p class="char-desc">정해진 경로와 단서를 고수하는 분석가.</p>
+                                <p class="char-quote">"단서 발견. 오차 범위 0.1%임. 추적 시작."</p>
+                            </div>
+                        </div>
+                        <div class="card-face card-back">
+                            <div class="tech-border">
+                                <div class="tarot-number">V</div>
+                                <div class="tarot-image-placeholder">📜</div>
+                                <div class="tarot-name">The Hierophant</div>
+                                <button class="expand-btn" onclick="expandCard(event, 'V. HIEROPHANT', '루티')">View Card</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Bella -->
+                <div class="char-card-scene" onclick="flipCard(this)">
+                    <div class="char-card-inner">
+                        <div class="card-face card-front">
+                            <div class="char-portrait" style="background-image: url('https://poft.uk/leets/z/l.webp');"></div>
+                            <div class="char-info">
+                                <div class="char-name">벨라</div>
+                                <div class="char-role">집행자 / 빨간 모자</div>
+                                <div class="char-traits"><span class="trait-tag">ISTP</span><span class="trait-tag">통제</span></div>
+                                <p class="char-desc">내면의 야수성을 제어하는 고독한 집행자.</p>
+                                <p class="char-quote">"말 걸지 마.. 사냥 방해되니까."</p>
+                            </div>
+                        </div>
+                        <div class="card-face card-back">
+                            <div class="tech-border">
+                                <div class="tarot-number">VIII</div>
+                                <div class="tarot-image-placeholder">🦁</div>
+                                <div class="tarot-name">Strength</div>
+                                <button class="expand-btn" onclick="expandCard(event, 'VIII. STRENGTH', '벨라')">View Card</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="char-card-scene" onclick="flipCard(this)">
+                    <div class="char-card-inner">
+                        <div class="card-face card-front">
+                        <div class="char-portrait" style="background-image: url('https://poft.uk/leets/z/q.webp'); background-color: #222;"></div>
+                            <div class="char-info">
+                            <div class="char-name">하비</div>
+                            <div class="char-role">기록관 / 피노키오</div>
+                            <div class="char-traits"><span class="trait-tag">INTP</span><span class="trait-tag">관찰자</span></div>
+                            <p class="char-desc">감정없이 사실만을 기록하는 기록관.</p>
+                            <p class="char-quote">"알겠다. 사실만 기록하겠다."</p>
+                        </div>
+                    </div>
+                    <div class="card-face card-back">
+                        <div class="tech-border">
+                            <div class="tarot-number">III</div>
+                            <div class="tarot-image-placeholder">👑</div>
+                            <div class="tarot-name">The Empress</div>
+                            <button class="expand-btn" onclick="expandCard(event, 'III. THE EMPRESS', '하비')">View Card</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+            <!-- Wild Parable -->
+            <div id="wild" class="character-container">
+                 <!-- Leona -->
+                 <div class="char-card-scene" onclick="flipCard(this)">
+                    <div class="char-card-inner">
+                        <div class="card-face card-front">
+                            <div class="char-portrait" style="background-image: url('https://poft.uk/leets/z/m.webp');"></div>
+                            <div class="char-info">
+                                <div class="char-name">레오나</div>
+                                <div class="char-role">전투원 / 사자와 생쥐</div>
+                                <div class="char-traits"><span class="trait-tag">ENFJ</span><span class="trait-tag">광휘</span></div>
+                                <p class="char-desc">사자의 왕다운 생명력과 밝은 에너지.</p>
+                                <p class="char-quote">"내가 지켜줄게. 내 뒤에 붙어."</p>
+                            </div>
+                        </div>
+                        <div class="card-face card-back">
+                            <div class="tech-border">
+                                <div class="tarot-number">XIX</div>
+                                <div class="tarot-image-placeholder">☀️</div>
+                                <div class="tarot-name">The Sun</div>
+                                <button class="expand-btn" onclick="expandCard(event, 'XIX. THE SUN', '레오나')">View Card</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Rain -->
+                <div class="char-card-scene" onclick="flipCard(this)">
+                    <div class="char-card-inner">
+                        <div class="card-face card-front">
+                            <div class="char-portrait" style="background-image: url('https://poft.uk/leets/z/n.webp');"></div>
+                            <div class="char-info">
+                                <div class="char-name">레인</div>
+                                <div class="char-role">책략가 / 여우와 신 포도</div>
+                                <div class="char-traits"><span class="trait-tag">ENTP</span><span class="trait-tag">교활</span></div>
+                                <p class="char-desc">상황을 자신에게 유리하게 뒤트는 마법사.</p>
+                                <p class="char-quote">"흥, 어차피 신 포도일 게 뻔해."</p>
+                            </div>
+                        </div>
+                        <div class="card-face card-back">
+                            <div class="tech-border">
+                                <div class="tarot-number">I</div>
+                                <div class="tarot-image-placeholder">🎩</div>
+                                <div class="tarot-name">The Magician</div>
+                                <button class="expand-btn" onclick="expandCard(event, 'I. THE MAGICIAN', '레인')">View Card</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Ari -->
+                <div class="char-card-scene" onclick="flipCard(this)">
+                    <div class="char-card-inner">
+                        <div class="card-face card-front">
+                            <div class="char-portrait" style="background-image: url('https://poft.uk/leets/z/o.webp');"></div>
+                            <div class="char-info">
+                                <div class="char-name">아리</div>
+                                <div class="char-role">보급원 / 개미와 베짱이</div>
+                                <div class="char-traits"><span class="trait-tag">ISTJ</span><span class="trait-tag">공정</span></div>
+                                <p class="char-desc">일한 만큼 얻는 냉혹한 인과응보 논리.</p>
+                                <p class="char-quote">"효율이 우선. 노는 건 사치."</p>
+                            </div>
+                        </div>
+                        <div class="card-face card-back">
+                            <div class="tech-border">
+                                <div class="tarot-number">XI</div>
+                                <div class="tarot-image-placeholder">⚖️</div>
+                                <div class="tarot-name">Justice</div>
+                                <button class="expand-btn" onclick="expandCard(event, 'XI. JUSTICE', '아리')">View Card</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </section>
+
+        <footer style="margin-top:5rem; padding-bottom:2rem; text-align:center; color:#555;">
+            <p>&copy; 2026 Cruel Reality Academy. That's not real.</p>
+        </footer>
+    </main>
+
+    <!-- Modal for Expanded Card View -->
+    <div id="cardModal" onclick="closeModal()">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <div class="close-modal" onclick="closeModal()">CLOSE SYSTEM</div>
+            
+            <img id="modalImage" src="" alt="Character Image">
+            
+            <div class="tarot-name" id="modalName" style="border:none; margin:0;"></div>
+            <div id="modalCharName"></div>
+        </div>
+    </div>
+
+    <script>
+        // --- 1. Loading & Audio System ---
+        document.addEventListener('DOMContentLoaded', () => {
+            const bar = document.getElementById('progressBar');
+            const text = document.getElementById('loadingText');
+            const enterBtn = document.getElementById('enterBtn');
+            
+            let width = 0;
+            const interval = setInterval(() => {
+                if (width >= 100) {
+                    clearInterval(interval);
+                    text.innerText = "SYSTEM INITIALIZED.";
+                    enterBtn.style.display = 'block';
+                } else {
+                    width += Math.floor(Math.random() * 5) + 1; 
+                    if(width > 100) width = 100;
+                    bar.style.width = width + '%';
+                    text.innerText = `Connecting to Server... ${width}%`;
+                }
+            }, 20); // Faster loading for SF vibe
+        });
+
+        function enterSite() {
+            const loader = document.getElementById('loader');
+            const main = document.getElementById('mainContent');
+            const bgm = document.getElementById('bgm');
+            const audioBtn = document.getElementById('audioBtn');
+
+            // Glitch fade out
+            loader.style.opacity = '0';
+            setTimeout(() => {
+                loader.style.display = 'none';
+                main.style.opacity = '1';
+                
+                bgm.volume = 0.4;
+                bgm.play().then(() => {
+                    audioBtn.innerText = "AUDIO: ON";
+                }).catch(e => {
+                    console.log("Audio interaction required");
+                });
+            }, 800);
+        }
+
+        function toggleAudio() {
+            const bgm = document.getElementById('bgm');
+            const btn = document.getElementById('audioBtn');
+            if(bgm.paused) {
+                bgm.play();
+                btn.innerText = "AUDIO: ON";
+            } else {
+                bgm.pause();
+                btn.innerText = "AUDIO: OFF";
+            }
+        }
+
+        // --- 2. Tab System ---
+        function openTab(factionName) {
+            const contents = document.querySelectorAll('.character-container');
+            contents.forEach(con => con.classList.remove('active'));
+            const buttons = document.querySelectorAll('.tab-btn');
+            buttons.forEach(btn => btn.classList.remove('active'));
+
+            document.getElementById(factionName).classList.add('active');
+            
+            buttons.forEach(btn => {
+                if(btn.getAttribute('onclick').includes(factionName)) {
+                    btn.classList.add('active');
+                }
+            });
+        }
+
+        // --- 3. Flip Card System ---
+        function flipCard(cardElement) {
+            cardElement.classList.toggle('flipped');
+        }
+
+        // --- 4. Expand Modal System (Updated: Shows Image) ---
+        function expandCard(event, tarotTitle, charName) {
+            event.stopPropagation();
+            
+            const modal = document.getElementById('cardModal');
+            const parts = tarotTitle.split('. ');
+            const number = parts[0];
+            const name = parts[1];
+            
+            // Logic to find the image URL from the same card
+            // Navigate up to scene, then down to front face, then to portrait div
+            const cardScene = event.currentTarget.closest('.char-card-scene');
+            const portraitDiv = cardScene.querySelector('.char-portrait');
+            
+            // Extract URL from background-image property
+            // Format is usually: url("http...")
+            const bgStyle = portraitDiv.style.backgroundImage;
+            const imageUrl = bgStyle.slice(5, -2); // Removing url(" and ")
+
+            const modalImg = document.getElementById('modalImage');
+            const modalName = document.getElementById('modalName');
+            const modalCharName = document.getElementById('modalCharName');
+
+            modalImg.src = imageUrl;
+            modalName.innerText = name;
+            modalCharName.innerText = `SUBJECT: ${charName} // CODE: ${number}`;
+
+            modal.style.display = 'flex';
+        }
+
+        function closeModal() {
+            document.getElementById('cardModal').style.display = 'none';
+        }
+    </script>
+</body>
+</html>
